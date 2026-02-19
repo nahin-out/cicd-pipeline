@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class HelloController {
         @GetMapping("/")
         public String home() {
-                return "Pipeline is running!";
+                return "Pipeline is running!"
         }
 
         @GetMapping("/healthz")
