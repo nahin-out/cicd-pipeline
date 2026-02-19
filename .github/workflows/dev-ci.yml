@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - dev
+  pull_request:
+    branches:
+      - dev
 
 jobs:
   build:
@@ -21,4 +24,10 @@ jobs:
           cache: maven
 
       - name: Build with Maven
-        run: mvn clean package
+        run: mvn clean verify
+
+      - name: upload JAR Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: pipeline-jar
+          path: target/*.jar
