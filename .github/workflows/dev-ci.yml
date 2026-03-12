@@ -1,14 +1,12 @@
-name: Dev CI
+name: CI-CD Dev Pipeline
 
 on:
   push:
     branches:
       - dev
-  pull_request:
-    branches:
-      - dev
 
 jobs:
+
   build:
     runs-on: ubuntu-latest
 
@@ -16,22 +14,24 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Java 17
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
           cache: maven
 
-      - name: Build with Maven
+      - name: Build application
         run: mvn clean package
 
-      - name: upload JAR Artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: pipeline-jar
           path: target/*.jar
-   deploy:
+
+
+  deploy:
     needs: build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/dev'
