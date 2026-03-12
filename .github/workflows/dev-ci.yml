@@ -42,13 +42,16 @@ jobs:
         with:
           name: pipeline-jar
           path: .
-
+      - name: Restore SSH key
+        run: |
+          echo "${{ secrets.EC2_KEY_B64 }}" | base64 -d > key.pem
+          chmod 600 key.pem
       - name: Copy JAR to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
+          key_path: key.pem
           source: "*.jar"
           target: "/opt/pipeline"
 
@@ -57,7 +60,7 @@ jobs:
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
+          key_path: key.pem
           script: |
             sudo mv /opt/pipeline/*.jar /opt/pipeline/app.jar
             sudo systemctl restart pipeline.service
