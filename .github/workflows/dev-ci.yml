@@ -30,9 +30,52 @@ jobs:
           name: pipeline-jar
           path: target/*.jar
 
+  dependency-scan:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dependency vulnerability scan
+        run: mvn org.owasp:dependency-check-maven:check
+
+  secret-scan:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: scan for secrets
+        uses: gitleaks/gitleaks-action@v3.0.0
+
+  codeql-scan:
+    needs: build
+    runs-on: ubuntu-latest
+
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: java
+
+      - name: Build for CodeQL
+        run: mvn clean package
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
 
   deploy:
-    needs: build
+    needs: [build, dependency-scan, secret-scan, codeql-scan]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/dev'
 

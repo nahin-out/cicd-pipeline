@@ -12,6 +12,6 @@ public class HelloController {
 
         @GetMapping("/healthz")
         public String healthz() {
-                return "Healthy! and Asking for ci-cd confirmation if it is working bro";
+                return "Healthy! DevSecOps pipeline is working fine.";
         }
 }
