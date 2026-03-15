@@ -51,6 +51,8 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "*.jar"
           target: "/opt/pipeline"
+          timeout: 120s
+          command_timeout: 120s
 
       - name: Restart application
         uses: appleboy/ssh-action@v1.0.3
