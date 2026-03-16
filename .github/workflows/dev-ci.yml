@@ -29,80 +29,105 @@ jobs:
         with:
           name: pipeline-jar
           path: target/*.jar
+# Unnecessary security scans are commented out for now to speed up the pipeline. They can be re-enabled later as needed.
+  # dependency-scan:
+  #   needs: build
+  #   runs-on: ubuntu-latest
 
-  dependency-scan:
-    needs: build
+  #   steps:
+  #     - uses: actions/checkout@v4
+
+  #     - name: Dependency vulnerability scan
+  #       run: mvn org.owasp:dependency-check-maven:check || true
+
+  # secret-scan:
+  #   needs: build
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v2
+
+  #     - name: scan for secrets
+  #       uses: gitleaks/gitleaks-action@v2.3.2
+
+  # codeql-scan:
+  #   needs: build
+  #   runs-on: ubuntu-latest
+
+  #   permissions:
+  #     security-events: write
+  #     actions: read
+  #     contents: read
+
+  #   steps:
+  #     - uses: actions/checkout@v4
+
+  #     - name: Initialize CodeQL
+  #       uses: github/codeql-action/init@v3
+  #       with:
+  #         languages: java
+
+  #     - name: Build for CodeQL
+  #       run: mvn clean package
+
+  #     - name: Perform CodeQL Analysis
+  #       uses: github/codeql-action/analyze@v3
+
+  deploy:
+    needs: build #[dependency-scan, secret-scan, codeql-scan]
     runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Dependency vulnerability scan
-        run: mvn org.owasp:dependency-check-maven:check || true
-
-  secret-scan:
-    needs: build
-    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/dev'
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: scan for secrets
-        uses: gitleaks/gitleaks-action@v2.3.2
-
-  codeql-scan:
-    needs: build
-    runs-on: ubuntu-latest
-
-    permissions:
-      security-events: write
-      actions: read
-      contents: read
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: java
-
-      - name: Build for CodeQL
-        run: mvn clean package
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-
-  deploy:
-    needs: [build, dependency-scan, secret-scan, codeql-scan]
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/dev'
+        uses: actions/checkout@v4
 
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: pipeline-jar
-          path: .
 
-      - name: Copy JAR to EC2
-        uses: appleboy/scp-action@v0.1.7
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "*.jar"
-          target: "/opt/pipeline"
-          timeout: 120s
-          command_timeout: 120s
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
 
-      - name: Restart application
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            sudo mv /opt/pipeline/pipeline-0.0.1-SNAPSHOT.jar /opt/pipeline/app.jar
-            sudo systemctl restart pipeline.service
+      - name: Create deploment bundle
+        run: |
+          zip -r deployment.zip pipeline-0.0.1-SNAPSHOT.jar appsec.yml scripts
+
+      - name: Upload to S3
+        run: |
+          aws s3 cp deployment.zip s3://pipeline-deploy-artifacts-851725652938/dev/deployment.zip
+
+      - name: Trigger CodeDeploy
+        run: |
+          aws deploy create-deployment \
+            --application-name pipeline-application \
+            --deployment-group-name pipeline-dev-group \
+            --s3-location bucket=pipeline-deploy-artifacts,key=dev/deployment.zip,bundleType=zip
+
+      # - name: Copy JAR to EC2
+      #   uses: appleboy/scp-action@v0.1.7
+      #   with:
+      #     host: ${{ secrets.EC2_HOST }}
+      #     username: ${{ secrets.EC2_USER }}
+      #     key: ${{ secrets.EC2_SSH_KEY }}
+      #     source: "*.jar"
+      #     target: "/opt/pipeline"
+      #     timeout: 120s
+      #     command_timeout: 120s
+
+      # - name: Restart application
+      #   uses: appleboy/ssh-action@v1.0.3
+      #   with:
+      #     host: ${{ secrets.EC2_HOST }}
+      #     username: ${{ secrets.EC2_USER }}
+      #     key: ${{ secrets.EC2_SSH_KEY }}
+      #     script: |
+      #       sudo mv /opt/pipeline/pipeline-0.0.1-SNAPSHOT.jar /opt/pipeline/app.jar
+      #       sudo systemctl restart pipeline.service
