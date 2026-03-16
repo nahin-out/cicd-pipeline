@@ -12,11 +12,11 @@ public class HelloController {
 
         @GetMapping("/healthz")
         public String healthz() {
-                return "Healthy! code deployed with codeDeployed.";
+                return "not Healthy! codeDeployed.";
         }
 
-        @GetMapping("/hi")
-        public String hi() {
+        @GetMapping("/hix")
+        public String hix() {
                 return "Hello, World!";
         }
 }
