@@ -95,7 +95,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Create deploment bundle
+      - name: Create deployment bundle
         run: |
           zip -r deployment.zip pipeline-0.0.1-SNAPSHOT.jar appspec.yml scripts
 
