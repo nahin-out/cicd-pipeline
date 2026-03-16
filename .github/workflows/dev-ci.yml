@@ -95,13 +95,9 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Prepare artifact
-        run: |
-          cp target/pipeline-0.0.1-SNAPSHOT.jar app.jar
-
       - name: Create deployment bundle
         run: |
-          zip -r deployment.zip app.jar appspec.yml scripts
+          zip -r deployment.zip pipeline-0.0.1-SNAPSHOT.jar appspec.yml scripts
 
       - name: Upload to S3
         run: |
