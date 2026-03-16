@@ -14,4 +14,9 @@ public class HelloController {
         public String healthz() {
                 return "Healthy! code deployed with codeDeployed.";
         }
+
+        @GetMapping("/hi")
+        public String hi() {
+                return "Hello, World!";
+        }
 }
