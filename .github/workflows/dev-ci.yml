@@ -108,7 +108,7 @@ jobs:
           aws deploy create-deployment \
             --application-name pipeline-application \
             --deployment-group-name pipeline-dev-group \
-            --s3-location bucket=pipeline-deploy-artifacts,key=dev/deployment.zip,bundleType=zip
+            --s3-location bucket=pipeline-deploy-artifacts-851725652938,key=deployment.zip,bundleType=zip
 
       # - name: Copy JAR to EC2
       #   uses: appleboy/scp-action@v0.1.7
